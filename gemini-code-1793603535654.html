@@ -1,0 +1,879 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SDGs 性別平權-情境題</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+    }
+    body, html {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      font-family: "PingFang TC", "Microsoft JhengHei", sans-serif;
+    }
+
+    /* 全螢幕背景 Canvas (大草原與遠處遊樂園) */
+    #themeParkCanvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 1;
+    }
+
+    /* 頁首 UI */
+    .header {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 70px;
+      padding: 0 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: linear-gradient(180deg, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0.75) 100%);
+      backdrop-filter: blur(8px);
+      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+      z-index: 10;
+    }
+
+    .title-area {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .app-title {
+      font-size: 26px;
+      font-weight: 900;
+      color: #9c27b0;
+      letter-spacing: 1px;
+      text-shadow: 1px 1px 0px rgba(255,255,255,0.8);
+    }
+
+    .tag {
+      background: #ba68c8;
+      color: white;
+      font-size: 13px;
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-weight: bold;
+    }
+
+    .score-area {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+    }
+
+    .score-card {
+      background: #ffffff;
+      border: 2px solid #ce93d8;
+      padding: 6px 18px;
+      border-radius: 30px;
+      font-size: 18px;
+      font-weight: bold;
+      color: #4a148c;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+    }
+
+    .music-btn {
+      background: #9c27b0;
+      color: white;
+      border: none;
+      padding: 8px 14px;
+      border-radius: 20px;
+      font-weight: bold;
+      cursor: pointer;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+      transition: all 0.2s;
+    }
+    .music-btn:hover {
+      transform: scale(1.05);
+      background: #7b1fa2;
+    }
+
+    /* 花朵圖示放置區域（大草原下半部） */
+    #flowerContainer {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 5;
+      pointer-events: none;
+    }
+
+    .flower-item {
+      position: absolute;
+      pointer-events: auto;
+      cursor: pointer;
+      transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.27), opacity 0.4s ease;
+      animation: swayAnim 3s ease-in-out infinite alternate;
+    }
+
+    .flower-item:hover {
+      filter: drop-shadow(0 10px 20px rgba(255, 235, 59, 0.6));
+      transform: scale(1.15) !important;
+    }
+
+    .flower-item.hide {
+      opacity: 0;
+      transform: scale(0) rotate(45deg) !important;
+      pointer-events: none;
+    }
+
+    @keyframes swayAnim {
+      0% { transform: translateY(0px) rotate(-3deg); }
+      100% { transform: translateY(-10px) rotate(3deg); }
+    }
+
+    /* Modal 通用彈窗與遮罩 */
+    .modal-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.6);
+      backdrop-filter: blur(6px);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 100;
+      opacity: 1;
+      transition: opacity 0.3s ease;
+    }
+
+    .modal-overlay.hidden {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .modal-card {
+      background: #ffffff;
+      width: 92%;
+      max-width: 680px;
+      border-radius: 24px;
+      padding: 30px;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+      text-align: center;
+      animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.27);
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+
+    @keyframes popIn {
+      0% { transform: scale(0.85); opacity: 0; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+
+    .modal-card h2 {
+      color: #7b1fa2;
+      font-size: 26px;
+      margin-bottom: 16px;
+    }
+
+    /* 說明清單 */
+    .intro-list {
+      text-align: left;
+      background: #f3e5f5;
+      padding: 18px 22px;
+      border-radius: 16px;
+      margin-bottom: 24px;
+      list-style: none;
+    }
+
+    .intro-list li {
+      font-size: 15px;
+      color: #4a148c;
+      line-height: 1.6;
+      margin-bottom: 8px;
+    }
+
+    .btn-center-wrapper {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      width: 100%;
+      margin-top: 15px;
+    }
+
+    .action-btn {
+      background: linear-gradient(135deg, #ab47bc 0%, #7b1fa2 100%);
+      color: white;
+      border: none;
+      font-size: 20px;
+      font-weight: bold;
+      padding: 14px 40px;
+      border-radius: 50px;
+      cursor: pointer;
+      box-shadow: 0 6px 20px rgba(123, 31, 162, 0.4);
+      transition: all 0.2s;
+    }
+
+    .action-btn:hover {
+      transform: translateY(-3px) scale(1.03);
+      box-shadow: 0 10px 25px rgba(123, 31, 162, 0.5);
+    }
+
+    /* 拖曳題組專用樣式 */
+    .drag-instruction {
+      font-size: 16px;
+      color: #555;
+      margin-bottom: 15px;
+      font-weight: bold;
+    }
+
+    .cards-pool {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+
+    .drag-card {
+      background: #e1bee7;
+      border: 2px solid #ab47bc;
+      color: #4a148c;
+      padding: 12px 16px;
+      border-radius: 12px;
+      font-size: 15px;
+      font-weight: bold;
+      cursor: grab;
+      user-select: none;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .drag-card:active {
+      cursor: grabbing;
+      transform: scale(0.95);
+    }
+
+    .drop-zones-container {
+      display: flex;
+      gap: 16px;
+      justify-content: space-between;
+    }
+
+    .drop-zone {
+      flex: 1;
+      min-height: 140px;
+      border: 3px dashed #ab47bc;
+      border-radius: 16px;
+      padding: 12px;
+      background: #fafafa;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      transition: background 0.2s, border-color 0.2s;
+    }
+
+    .drop-zone.hovered {
+      background: #f3e5f5;
+      border-color: #7b1fa2;
+    }
+
+    .drop-zone-title {
+      font-size: 17px;
+      font-weight: 900;
+      padding: 4px 12px;
+      border-radius: 10px;
+    }
+
+    .zone-equal { color: #2e7d32; background: #e8f5e9; }
+    .zone-unequal { color: #c62828; background: #ffebee; }
+
+    /* 結算證書突顯白框按鈕（仿照標題樣式） */
+    .cert-highlight-wrapper {
+      background: #ffffff;
+      border: 4px solid #9c27b0;
+      border-radius: 20px;
+      padding: 24px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+      margin-top: 15px;
+      display: inline-block;
+    }
+
+    .cert-btn {
+      background: linear-gradient(135deg, #9c27b0 0%, #673ab7 100%);
+      color: #ffffff;
+      border: none;
+      font-size: 22px;
+      font-weight: 900;
+      padding: 16px 42px;
+      border-radius: 50px;
+      cursor: pointer;
+      box-shadow: 0 6px 20px rgba(156, 39, 176, 0.4);
+      transition: all 0.2s;
+      letter-spacing: 1px;
+    }
+
+    .cert-btn:hover {
+      transform: scale(1.05);
+      box-shadow: 0 10px 25px rgba(156, 39, 176, 0.6);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- 背景 Canvas -->
+  <canvas id="themeParkCanvas"></canvas>
+
+  <!-- 頁首 UI -->
+  <header class="header">
+    <div class="title-area">
+      <h1 class="app-title">SDGs 性別平權-情境題</h1>
+      <span class="tag">第二關：遊樂園情境考驗</span>
+    </div>
+    <div class="score-area">
+      <div class="score-card">答對題數：<span id="scoreText">0</span> / 10</div>
+      <button class="music-btn" id="musicToggleBtn" onclick="toggleMusic()">🔊 背景音樂</button>
+    </div>
+  </header>
+
+  <!-- 花朵放置區域 -->
+  <div id="flowerContainer"></div>
+
+  <!-- 1. 遊戲說明 Modal -->
+  <div class="modal-overlay" id="introModal">
+    <div class="modal-card">
+      <h2>🎡 第二關：遊戲說明</h2>
+      <ul class="intro-list">
+        <li>☆ 請點選畫面中的花朵，每組花朵會搭配 1 個題組。</li>
+        <li>☆ 每個題組都有 2 個觀念，請將行為或語句拖進「性別平等 / 不平等」兩邊的框中。</li>
+        <li>☆ 結局會依答對題數給予不同等級的結果，例如：再加油、進步中、平權達人。</li>
+        <li>☆ 全部做答結束，會得到對應的挑戰級別。</li>
+        <li>☛ 如果等級是「再加油」、「進步中」，會出現「再次挑戰」按鈕，請重新挑戰。</li>
+        <li>☛ 如果等級是平權達人(答對 8 題以上)，會出現「下載學習證書」按鈕，可以製作個人的過關證書喔！</li>
+        <li>☆ 挑戰結果對應的級別：0-3 題為「再加油」、4-7 題為「進步中」、8-10 題為「平權達人」。</li>
+      </ul>
+      <div class="btn-center-wrapper">
+        <button class="action-btn" onclick="startGame()">開始遊戲</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. 拖曳問答 Modal -->
+  <div class="modal-overlay hidden" id="quizModal">
+    <div class="modal-card">
+      <div style="font-size: 14px; color: #8e24aa; font-weight: bold; margin-bottom: 6px;" id="quizGroupTitle">題組</div>
+      <div class="drag-instruction">請將下列 2 個語句/行為，拖曳移至對應的分類框中：</div>
+      
+      <!-- 待拖曳卡片區 -->
+      <div class="cards-pool" id="cardsPool"></div>
+
+      <!-- 放置分類區域 -->
+      <div class="drop-zones-container">
+        <div class="drop-zone" id="zoneEqual" ondragover="allowDrop(event)" ondragleave="leaveDrop(event)" ondrop="handleDrop(event, 'equal')">
+          <div class="drop-zone-title zone-equal">✨ 性別平等</div>
+        </div>
+        <div class="drop-zone" id="zoneUnequal" ondragover="allowDrop(event)" ondragleave="leaveDrop(event)" ondrop="handleDrop(event, 'unequal')">
+          <div class="drop-zone-title zone-unequal">⚠️ 性別不平等</div>
+        </div>
+      </div>
+
+      <div class="btn-center-wrapper">
+        <button class="action-btn" style="font-size: 16px; padding: 10px 28px;" onclick="submitGroupAnswer()">送出本題組</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3. 遊戲等級結算 Modal -->
+  <div class="modal-overlay hidden" id="resultModal">
+    <div class="modal-card">
+      <h2 id="resultTitle">挑戰結果</h2>
+      <div id="resultBadge" style="font-size: 32px; font-weight: 900; margin: 15px 0; color: #7b1fa2;"></div>
+      <p id="resultDesc" style="font-size: 18px; color: #555; margin-bottom: 20px; line-height: 1.6;"></p>
+      
+      <div class="btn-center-wrapper" id="resultBtnArea"></div>
+    </div>
+  </div>
+
+  <script>
+    /* ==========================================
+       1. 5 個題組（共 10 個觀念題）
+       ========================================== */
+    const questionGroups = [
+      {
+        id: 1,
+        items: [
+          { text: "爸爸媽媽輪流料理晚餐與照顧小孩", type: "equal" },
+          { text: "認為女性不適合從事高科技工程師職務", type: "unequal" }
+        ]
+      },
+      {
+        id: 2,
+        items: [
+          { text: "不論男女，表現優異者皆可獲得晉升主管機會", type: "equal" },
+          { text: "面試時要求女性應徵者簽署不懷孕承諾書", type: "unequal" }
+        ]
+      },
+      {
+        id: 3,
+        items: [
+          { text: "鼓勵男生勇敢表達悲傷與哭泣的情緒", type: "equal" },
+          { text: "嘲笑玩洋娃娃的男童「太缺乏陽剛之氣」", type: "unequal" }
+        ]
+      },
+      {
+        id: 4,
+        items: [
+          { text: "公司提供男性員工同等的育嬰留職停薪假期", type: "equal" },
+          { text: "認為家務勞動無經濟價值，全由妻子承擔", type: "unequal" }
+        ]
+      },
+      {
+        id: 5,
+        items: [
+          { text: "學校體育隊伍同時招收男女球員，公平訓練", type: "equal" },
+          { text: "主張女學生的數理邏輯能力天生不如男學生", type: "unequal" }
+        ]
+      }
+    ];
+
+    /* ==========================================
+       2. 狀態管理
+       ========================================== */
+    let correctTotalCount = 0;
+    let completedGroupCount = 0;
+    let currentGroupIndex = null;
+    let isGameStarted = false;
+    let bgmPlaying = false;
+    let audioCtx = null;
+    let bgmInterval = null;
+    const flowerElements = [];
+
+    // 暫存當前 Modal 拖曳狀態
+    let currentPlacedState = { equal: [], unequal: [] };
+
+    /* ==========================================
+       3. 音效與背景音樂
+       ========================================== */
+    function initAudio() {
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+    }
+
+    function playSound(type) {
+      if (!audioCtx) return;
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      const now = audioCtx.currentTime;
+
+      if (type === 'correct') {
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(523.25, now);
+        osc.frequency.exponentialRampToValueAtTime(783.99, now + 0.25);
+        gain.gain.setValueAtTime(0.2, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.35);
+        osc.start(now); osc.stop(now + 0.35);
+      } else if (type === 'pop') {
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(350, now);
+        osc.frequency.exponentialRampToValueAtTime(700, now + 0.1);
+        gain.gain.setValueAtTime(0.15, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+        osc.start(now); osc.stop(now + 0.1);
+      }
+    }
+
+    function startBGM() {
+      if (bgmPlaying || !audioCtx) return;
+      bgmPlaying = true;
+      const notes = [329.63, 392.00, 440.00, 523.25, 440.00, 392.00];
+      let step = 0;
+
+      bgmInterval = setInterval(() => {
+        if (!bgmPlaying) return;
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(notes[step % notes.length], audioCtx.currentTime);
+        gain.gain.setValueAtTime(0.035, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.4);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start(); osc.stop(audioCtx.currentTime + 0.45);
+        step++;
+      }, 480);
+    }
+
+    function toggleMusic() {
+      initAudio();
+      const btn = document.getElementById('musicToggleBtn');
+      if (bgmPlaying) {
+        bgmPlaying = false;
+        clearInterval(bgmInterval);
+        btn.innerText = '🔇 音樂關閉';
+      } else {
+        startBGM();
+        btn.innerText = '🔊 背景音樂';
+      }
+    }
+
+    /* ==========================================
+       4. 遊樂園與大草原 Canvas & 氣泡粒子
+       ========================================== */
+    let particles = [];
+
+    function drawThemeParkBackground() {
+      const canvas = document.getElementById('themeParkCanvas');
+      const ctx = canvas.getContext('2d');
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+      const w = canvas.width;
+      const h = canvas.height;
+
+      // 1. 夢幻漸層天空
+      const skyGrad = ctx.createLinearGradient(0, 0, 0, h * 0.6);
+      skyGrad.addColorStop(0, '#f3e5f5');
+      skyGrad.addColorStop(1, '#e1bee7');
+      ctx.fillStyle = skyGrad;
+      ctx.fillRect(0, 0, w, h);
+
+      // 2. 遠景遊樂設施（摩天輪 & 雲霄飛車線條）
+      drawFerrisWheel(ctx, w * 0.82, h * 0.32, 70);
+      drawCoaster(ctx, w * 0.15, h * 0.38);
+
+      // 3. 遠景山丘
+      ctx.fillStyle = '#a5d6a7';
+      ctx.beginPath();
+      ctx.moveTo(0, h * 0.52);
+      ctx.quadraticCurveTo(w * 0.3, h * 0.42, w * 0.6, h * 0.52);
+      ctx.quadraticCurveTo(w * 0.85, h * 0.45, w, h * 0.5);
+      ctx.lineTo(w, h); ctx.lineTo(0, h); ctx.fill();
+
+      // 4. 前方廣闊大草原（佔據下半部較大區域）
+      ctx.fillStyle = '#66bb6a';
+      ctx.beginPath();
+      ctx.moveTo(0, h * 0.56);
+      ctx.quadraticCurveTo(w * 0.4, h * 0.48, w, h * 0.58);
+      ctx.lineTo(w, h); ctx.lineTo(0, h); ctx.fill();
+
+      // 粒子初始化
+      particles = [];
+      for (let i = 0; i < 35; i++) {
+        particles.push({
+          x: Math.random() * w,
+          y: Math.random() * h,
+          r: Math.random() * 4 + 2,
+          vy: Math.random() * 0.5 + 0.2,
+          alpha: Math.random() * 0.5 + 0.3
+        });
+      }
+    }
+
+    function drawFerrisWheel(ctx, cx, cy, r) {
+      ctx.strokeStyle = '#ab47bc'; ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.stroke();
+      for (let i = 0; i < 8; i++) {
+        const ang = (i * Math.PI) / 4;
+        ctx.beginPath(); ctx.moveTo(cx, cy);
+        ctx.lineTo(cx + Math.cos(ang) * r, cy + Math.sin(ang) * r);
+        ctx.stroke();
+      }
+      ctx.fillStyle = '#8e24aa';
+      ctx.beginPath(); ctx.moveTo(cx, cy);
+      ctx.lineTo(cx - 20, cy + r + 30); ctx.lineTo(cx + 20, cy + r + 30); ctx.fill();
+    }
+
+    function drawCoaster(ctx, sx, sy) {
+      ctx.strokeStyle = '#7b1fa2'; ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.moveTo(sx, sy + 40);
+      ctx.bezierCurveTo(sx + 80, sy - 50, sx + 160, sy + 80, sx + 240, sy);
+      ctx.stroke();
+    }
+
+    function renderParticles() {
+      const canvas = document.getElementById('themeParkCanvas');
+      const ctx = canvas.getContext('2d');
+      const w = canvas.width; const h = canvas.height;
+
+      drawThemeParkBackground();
+
+      particles.forEach(p => {
+        p.y -= p.vy;
+        if (p.y < 0) p.y = h;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(255, 255, 255, ${p.alpha})`;
+        ctx.shadowBlur = 6; ctx.shadowColor = '#fff';
+        ctx.fill(); ctx.shadowBlur = 0;
+      });
+
+      requestAnimationFrame(renderParticles);
+    }
+
+    /* ==========================================
+       5. 隨機生成 5 朵花朵圖片 (PNG 透明背景)
+       ========================================== */
+    function generateFlowerDataURL(petalColor) {
+      const canvas = document.createElement('canvas');
+      canvas.width = 80; canvas.height = 100;
+      const ctx = canvas.getContext('2d');
+
+      // 花莖
+      ctx.strokeStyle = '#388e3c'; ctx.lineWidth = 5;
+      ctx.beginPath(); ctx.moveTo(40, 50); ctx.quadraticCurveTo(45, 75, 40, 95); ctx.stroke();
+
+      // 葉子
+      ctx.fillStyle = '#4caf50';
+      ctx.beginPath(); ctx.ellipse(30, 75, 12, 6, -Math.PI / 4, 0, Math.PI * 2); ctx.fill();
+
+      // 花瓣
+      ctx.fillStyle = petalColor;
+      for (let i = 0; i < 6; i++) {
+        const ang = (i * Math.PI) / 3;
+        ctx.beginPath();
+        ctx.arc(40 + Math.cos(ang) * 18, 40 + Math.sin(ang) * 18, 12, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      // 花心
+      ctx.fillStyle = '#fbc02d';
+      ctx.beginPath(); ctx.arc(40, 40, 11, 0, Math.PI * 2); ctx.fill();
+
+      return canvas.toDataURL();
+    }
+
+    function createFlowers() {
+      const container = document.getElementById('flowerContainer');
+      container.innerHTML = '';
+      flowerElements.length = 0;
+
+      const colors = ['#ff4081', '#ab47bc', '#ff9800', '#29b6f6', '#ec407a'];
+      const positions = [];
+
+      for (let i = 0; i < 5; i++) {
+        let top, left, collision;
+        let attempts = 0;
+
+        // 限制在網頁下半部大草原區域 (Top: 58% ~ 82%)
+        do {
+          collision = false;
+          top = 58 + Math.random() * 24;
+          left = 8 + Math.random() * 78;
+          attempts++;
+
+          for (let pos of positions) {
+            if (Math.hypot(pos.top - top, pos.left - left) < 14) {
+              collision = true; break;
+            }
+          }
+        } while (collision && attempts < 100);
+
+        positions.push({ top, left });
+
+        const flower = document.createElement('div');
+        flower.className = 'flower-item';
+        flower.style.top = top + '%';
+        flower.style.left = left + '%';
+        flower.style.width = '75px';
+        flower.style.height = '95px';
+        flower.style.backgroundImage = `url(${generateFlowerDataURL(colors[i % colors.length])})`;
+        flower.style.backgroundSize = 'contain';
+        flower.style.backgroundRepeat = 'no-repeat';
+
+        flower.addEventListener('click', () => openQuizGroup(i));
+        container.appendChild(flower);
+        flowerElements.push(flower);
+      }
+    }
+
+    /* ==========================================
+       6. 拖曳問答與流程控制
+       ========================================== */
+    function startGame() {
+      initAudio();
+      startBGM();
+      document.getElementById('introModal').classList.add('hidden');
+      isGameStarted = true;
+    }
+
+    function openQuizGroup(groupIndex) {
+      if (!isGameStarted) return;
+      playSound('pop');
+      currentGroupIndex = groupIndex;
+      currentPlacedState = { equal: [], unequal: [] };
+
+      const gData = questionGroups[groupIndex];
+      document.getElementById('quizGroupTitle').innerText = `題組 ${groupIndex + 1} / 5`;
+
+      const pool = document.getElementById('cardsPool');
+      pool.innerHTML = '';
+
+      // 重置 Drop Zones
+      document.getElementById('zoneEqual').innerHTML = '<div class="drop-zone-title zone-equal">✨ 性別平等</div>';
+      document.getElementById('zoneUnequal').innerHTML = '<div class="drop-zone-title zone-unequal">⚠️ 性別不平等</div>';
+
+      // 洗牌產生卡片
+      const shuffledItems = [...gData.items].sort(() => Math.random() - 0.5);
+      shuffledItems.forEach((item, idx) => {
+        const card = document.createElement('div');
+        card.className = 'drag-card';
+        card.draggable = true;
+        card.id = `card_${groupIndex}_${idx}`;
+        card.innerText = item.text;
+        card.dataset.type = item.type;
+
+        card.ondragstart = (e) => {
+          e.dataTransfer.setData('text/plain', card.id);
+        };
+
+        pool.appendChild(card);
+      });
+
+      document.getElementById('quizModal').classList.remove('hidden');
+    }
+
+    function allowDrop(e) {
+      e.preventDefault();
+      e.currentTarget.classList.add('hovered');
+    }
+
+    function leaveDrop(e) {
+      e.currentTarget.classList.remove('hovered');
+    }
+
+    function handleDrop(e, targetZoneType) {
+      e.preventDefault();
+      e.currentTarget.classList.remove('hovered');
+
+      const cardId = e.dataTransfer.getData('text/plain');
+      const card = document.getElementById(cardId);
+      if (!card) return;
+
+      e.currentTarget.appendChild(card);
+
+      // 更新放置紀錄
+      if (targetZoneType === 'equal') {
+        currentPlacedState.equal.push(card);
+      } else {
+        currentPlacedState.unequal.push(card);
+      }
+    }
+
+    function submitGroupAnswer() {
+      const gData = questionGroups[currentGroupIndex];
+      const equalZoneCards = document.getElementById('zoneEqual').querySelectorAll('.drag-card');
+      const unequalZoneCards = document.getElementById('zoneUnequal').querySelectorAll('.drag-card');
+
+      if (equalZoneCards.length + unequalZoneCards.length < 2) {
+        alert("請將 2 個觀念卡片皆拖曳放置到對應的框中喔！");
+        return;
+      }
+
+      let groupCorrect = 0;
+      equalZoneCards.forEach(c => { if (c.dataset.type === 'equal') groupCorrect++; });
+      unequalZoneCards.forEach(c => { if (c.dataset.type === 'unequal') groupCorrect++; });
+
+      correctTotalCount += groupCorrect;
+      completedGroupCount++;
+
+      document.getElementById('scoreText').innerText = correctTotalCount;
+      playSound('correct');
+
+      // 隱藏該朵花
+      if (flowerElements[currentGroupIndex]) {
+        flowerElements[currentGroupIndex].classList.add('hide');
+      }
+
+      document.getElementById('quizModal').classList.add('hidden');
+
+      // 檢查是否 5 個題組皆答完
+      if (completedGroupCount >= 5) {
+        showFinalResult();
+      }
+    }
+
+    /* ==========================================
+       7. 結算等級邏輯 (0-3:再加油, 4-7:進步中, 8-10:平權達人)
+       ========================================== */
+    function showFinalResult() {
+      const modal = document.getElementById('resultModal');
+      const badge = document.getElementById('resultBadge');
+      const desc = document.getElementById('resultDesc');
+      const btnArea = document.getElementById('resultBtnArea');
+
+      btnArea.innerHTML = '';
+      let rank = '';
+
+      if (correctTotalCount <= 3) {
+        rank = '再加油';
+        badge.innerText = `🌱 挑戰等級：${rank}`;
+        badge.style.color = '#e65100';
+        desc.innerText = `您共答對了 ${correctTotalCount} / 10 題。平權路上我們一起努力，請點選下方按鈕重新挑戰！`;
+
+        const retryBtn = document.createElement('button');
+        retryBtn.className = 'action-btn';
+        retryBtn.innerText = '🔄 再次挑戰';
+        retryBtn.onclick = () => window.location.reload();
+        btnArea.appendChild(retryBtn);
+
+      } else if (correctTotalCount <= 7) {
+        rank = '進步中';
+        badge.innerText = `⭐ 挑戰等級：${rank}`;
+        badge.style.color = '#f57c00';
+        desc.innerText = `表現不錯！您答對了 ${correctTotalCount} / 10 題。離「平權達人」只差一步了，再次挑戰衝刺高分吧！`;
+
+        const retryBtn = document.createElement('button');
+        retryBtn.className = 'action-btn';
+        retryBtn.innerText = '🔄 再次挑戰';
+        retryBtn.onclick = () => window.location.reload();
+        btnArea.appendChild(retryBtn);
+
+      } else {
+        rank = '平權達人';
+        badge.innerText = `👑 挑戰等級：${rank}`;
+        badge.style.color = '#2e7d32';
+        desc.innerText = `太棒了！您獲得了 ${correctTotalCount} 分的優異成績，成功解鎖「SDGs 性別平權小達人」稱號！`;
+
+        // 突顯白色區塊按鈕
+        const certWrapper = document.createElement('div');
+        certWrapper.className = 'cert-highlight-wrapper';
+
+        const certBtn = document.createElement('button');
+        certBtn.className = 'cert-btn';
+        certBtn.innerText = '📜 下載學習證書 ➔';
+        certBtn.onclick = () => {
+          // 將成績帶入網址跳轉至證書頁
+          window.location.href = `certificate.html?score=${correctTotalCount}`;
+        };
+
+        certWrapper.appendChild(certBtn);
+        btnArea.appendChild(certWrapper);
+      }
+
+      modal.classList.remove('hidden');
+    }
+
+    /* ==========================================
+       8. 初始化執行
+       ========================================== */
+    window.addEventListener('load', () => {
+      drawThemeParkBackground();
+      createFlowers();
+      renderParticles();
+    });
+
+    window.addEventListener('resize', () => {
+      drawThemeParkBackground();
+    });
+  </script>
+</body>
+</html>
